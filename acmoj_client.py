@@ -21,6 +21,10 @@ import argparse
 import os
 from typing import Dict, Any, Optional
 
+# Disable SOCKS proxy
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 class ACMOJClient:
     def __init__(self, access_token: str):
         self.api_base = "https://acm.sjtu.edu.cn/OnlineJudge/api/v1"
@@ -29,14 +33,17 @@ class ACMOJClient:
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": "ACMOJ-Python-Client/2.1"
         }
+        # Create session with no proxy
+        self.session = requests.Session()
+        self.session.proxies = {'http': None, 'https': None}
     
     def _make_request(self, method: str, endpoint: str, data: Dict[str, Any] = None, params: Dict[str, Any] = None) -> Optional[Dict]:
         url = f"{self.api_base}{endpoint}"
         try:
             if method.upper() == "GET":
-                response = requests.get(url, headers=self.headers, params=params, timeout=10)
+                response = self.session.get(url, headers=self.headers, params=params, timeout=10)
             elif method.upper() == "POST":
-                response = requests.post(url, headers=self.headers, data=data, timeout=10)
+                response = self.session.post(url, headers=self.headers, data=data, timeout=10)
             else:
                 print(f"Unsupported HTTP method: {method}")
                 return None
